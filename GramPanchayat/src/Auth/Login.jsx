@@ -14,11 +14,14 @@ export default function Login() {
         e.preventDefault();
         try {
             const userCredential=await signInWithEmailAndPassword(auth, email, password);
-            console.log(userCredential);
             const user = userCredential.user;
         
-            const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
+            const userRef = doc(db, "users", user.uid);
+            // console.log(userRef);
+            // console.log(staffRef);
+
+            const docSnap = await getDoc(userRef);
+            console.log(docSnap);
 
         if (docSnap.exists()) {
             console.log("Document data:", docSnap.data());
@@ -29,6 +32,11 @@ export default function Login() {
                 console.log("admin");
             }else if(user.role==="user"){
                 console.log("user");
+            }else if(user.role==="staff"){
+                console.log("staff");
+                navigate("/staff");
+            }else{
+                console.log("invalid");
             }
         }
 

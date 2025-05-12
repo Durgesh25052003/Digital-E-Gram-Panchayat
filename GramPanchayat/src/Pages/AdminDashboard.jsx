@@ -11,12 +11,23 @@ export default function AdminDashboard() {
     const [error, setError] = useState('');
 
     // New service form state
+    // Add these to your state declarations
     const [newService, setNewService] = useState({
         title: '',
         description: '',
         requirements: '',
-        fees: ''
+        fees: '',
+        validityDays: '',
+        processingTime: '',
+        department: '',
+        documentRequired: '',
+        eligibility: '',
+        startDate: '',
+        endDate: '',
+        isActive: true
     });
+
+
 
     const [staff, setStaff] = useState([]);
     // Fix the initial state
@@ -27,36 +38,25 @@ export default function AdminDashboard() {
         phone: '',
         role: 'staff'
     });
-    
+
     // Update handleAddStaff to include error handling
+    // Update handleAddStaff function
     const handleAddStaff = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError(''); // Clear previous errors
+        setError('');
 
-        // Store admin's email and password temporarily
         const adminEmail = auth.currentUser?.email;
         const adminPassword = prompt("Please enter your password to confirm staff creation");
-        
+
         try {
             if (!newStaff.fullName || !newStaff.email || !newStaff.password || !newStaff.phone) {
                 throw new Error('Please fill in all fields');
             }
-            console.log("🌟")
-            // First store staff data in Firestore
-            const staffDocRef = doc(collection(db, "staffs"));
-            await setDoc(staffDocRef, {
-                fullName: newStaff.fullName,
-                email: newStaff.email,
-                phone: newStaff.phone,
-                role: newStaff.role,
-                createdAt: new Date(),
-                status: 'active'
-            });
-           console.log("🌟🌟")
 
             // Sign out admin temporarily
             await signOut(auth);
+
             // Create auth account
             const staffCredential = await createUserWithEmailAndPassword(
                 auth,
@@ -64,9 +64,15 @@ export default function AdminDashboard() {
                 newStaff.password
             );
 
-            // Update staff document with auth ID
-            await updateDoc(staffDocRef, {
-                staffId: staffCredential.user.uid
+            // Store staff data in users collection instead of staffs
+            await setDoc(doc(db, "users", staffCredential.user.uid), {
+                fullName: newStaff.fullName,
+                email: newStaff.email,
+                phone: newStaff.phone,
+                role: 'staff',
+                createdAt: new Date(),
+                userId: staffCredential.user.uid,
+                status: 'active'
             });
 
             // Sign admin back in
@@ -79,7 +85,6 @@ export default function AdminDashboard() {
                 phone: '',
                 role: 'staff'
             });
-            console.log(auth.currentUser)
             fetchStaff();
         } catch (error) {
             setError(error.message || "Failed to add staff member");
@@ -89,49 +94,16 @@ export default function AdminDashboard() {
         }
     };
 
-    // Fetch services and applications
-    useEffect(() => {
-        fetchServices();
-        fetchApplications();
-        fetchStaff();
-    }, []);
-
-    const fetchServices = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, "services"));
-            const servicesData = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setServices(servicesData);
-        } catch (error) {
-            setError("Failed to fetch services");
-            console.error(error);
-        }
-    };
-
-    const fetchApplications = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, "applications"));
-            const applicationsData = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setApplications(applicationsData);
-        } catch (error) {
-            setError("Failed to fetch applications");
-            console.error(error);
-        }
-    };
-
+    // Update fetchStaff to get staff from users collection
     const fetchStaff = async () => {
         try {
-            const querySnapshot = await getDocs(collection(db, "staffs"));
-            const staffData = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }
-            ));
+            const querySnapshot = await getDocs(collection(db, "users"));
+            const staffData = querySnapshot.docs
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }))
+                .filter(user => user.role === 'staff'); // Only get staff members
             setStaff(staffData);
         } catch (error) {
             console.log(error);
@@ -310,146 +282,152 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     )}
+
                     {activeTab === 'services' && (
                         <div className="bg-white rounded-lg shadow p-6">
-                            <h2 className="text-xl font-semibold mb-4">Add New Service</h2>
-                            <form onSubmit={handleAddService} className="space-y-4 mb-8">
-                                <div>
-                                    <label className="block mb-1">Title</label>
-                                    <input
-                                        type="text"
-                                        value={newService.title}
-                                        onChange={(e) => setNewService({ ...newService, title: e.target.value })}
-                                        className="w-full p-2 border rounded"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1">Description</label>
-                                    <textarea
-                                        value={newService.description}
-                                        onChange={(e) => setNewService({ ...newService, description: e.target.value })}
-                                        className="w-full p-2 border rounded"
-                                        rows="3"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1">Requirements</label>
-                                    <textarea
-                                        value={newService.requirements}
-                                        onChange={(e) => setNewService({ ...newService, requirements: e.target.value })}
-                                        className="w-full p-2 border rounded"
-                                        rows="3"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1">Fees</label>
-                                    <input
-                                        type="number"
-                                        value={newService.fees}
-                                        onChange={(e) => setNewService({ ...newService, fees: e.target.value })}
-                                        className="w-full p-2 border rounded"
-                                        required
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Adding...' : 'Add Service'}
-                                </button>
-                            </form>
+                            <div className="flex items-center mb-6">
+                                <img src="/government-logo.png" alt="Logo" className="h-16 mr-4" />
+                                <h2 className="text-2xl font-bold text-gray-800">Service Management Portal</h2>
+                            </div>
 
-                            <h2 className="text-xl font-semibold mb-4">Existing Services</h2>
-                            <div className="space-y-4">
-                                {services.map(service => (
-                                    <div key={service.id} className="border p-4 rounded">
-                                        {editingService?.id === service.id ? (
-                                            <form onSubmit={handleUpdateService} className="space-y-4">
-                                                <div>
-                                                    <label className="block mb-1">Title</label>
-                                                    <input
-                                                        type="text"
-                                                        value={editingService.title}
-                                                        onChange={(e) => setEditingService({ ...editingService, title: e.target.value })}
-                                                        className="w-full p-2 border rounded"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block mb-1">Description</label>
-                                                    <textarea
-                                                        value={editingService.description}
-                                                        onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
-                                                        className="w-full p-2 border rounded"
-                                                        rows="3"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block mb-1">Requirements</label>
-                                                    <textarea
-                                                        value={editingService.requirements}
-                                                        onChange={(e) => setEditingService({ ...editingService, requirements: e.target.value })}
-                                                        className="w-full p-2 border rounded"
-                                                        rows="3"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block mb-1">Fees</label>
-                                                    <input
-                                                        type="number"
-                                                        value={editingService.fees}
-                                                        onChange={(e) => setEditingService({ ...editingService, fees: e.target.value })}
-                                                        className="w-full p-2 border rounded"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        type="submit"
-                                                        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                                                        disabled={loading}
-                                                    >
-                                                        {loading ? 'Updating...' : 'Update'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setEditingService(null)}
-                                                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        ) : (
-                                            <>
-                                                <h3 className="font-semibold">{service.title}</h3>
-                                                <p className="text-gray-600">{service.description}</p>
-                                                <p className="text-gray-600">Requirements: {service.requirements}</p>
-                                                <p className="text-sm text-gray-500">Fees: ₹{service.fees}</p>
-                                                <div className="mt-2 space-x-2">
-                                                    <button
-                                                        onClick={() => setEditingService(service)}
-                                                        className="text-blue-500 hover:text-blue-700"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteService(service.id)}
-                                                        className="text-red-500 hover:text-red-700"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
+                            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                                <h2 className="text-xl font-semibold mb-4 text-blue-900">Add New Service</h2>
+                                <form onSubmit={handleAddService} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Service Title*</label>
+                                        <input
+                                            type="text"
+                                            value={newService.title}
+                                            onChange={(e) => setNewService({ ...newService, title: e.target.value })}
+                                            className="w-full p-2 border rounded focus:border-blue-500 focus:ring-1"
+                                            required
+                                        />
                                     </div>
-                                ))}
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Department*</label>
+                                        <select
+                                            value={newService.department}
+                                            onChange={(e) => setNewService({ ...newService, department: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            required
+                                        >
+                                            <option value="">Select Department</option>
+                                            <option value="revenue">Revenue Department</option>
+                                            <option value="education">Education Department</option>
+                                            <option value="health">Health Department</option>
+                                            <option value="agriculture">Agriculture Department</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block mb-1 font-semibold">Description*</label>
+                                        <textarea
+                                            value={newService.description}
+                                            onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            rows="3"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Processing Time (in days)*</label>
+                                        <input
+                                            type="number"
+                                            value={newService.processingTime}
+                                            onChange={(e) => setNewService({ ...newService, processingTime: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Validity (in days)*</label>
+                                        <input
+                                            type="number"
+                                            value={newService.validityDays}
+                                            onChange={(e) => setNewService({ ...newService, validityDays: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Start Date*</label>
+                                        <input
+                                            type="date"
+                                            value={newService.startDate}
+                                            onChange={(e) => setNewService({ ...newService, startDate: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">End Date</label>
+                                        <input
+                                            type="date"
+                                            value={newService.endDate}
+                                            onChange={(e) => setNewService({ ...newService, endDate: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block mb-1 font-semibold">Required Documents*</label>
+                                        <textarea
+                                            value={newService.documentRequired}
+                                            onChange={(e) => setNewService({ ...newService, documentRequired: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            rows="3"
+                                            placeholder="List all required documents, one per line"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block mb-1 font-semibold">Eligibility Criteria*</label>
+                                        <textarea
+                                            value={newService.eligibility}
+                                            onChange={(e) => setNewService({ ...newService, eligibility: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            rows="3"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 font-semibold">Fees (₹)*</label>
+                                        <input
+                                            type="number"
+                                            value={newService.fees}
+                                            onChange={(e) => setNewService({ ...newService, fees: e.target.value })}
+                                            className="w-full p-2 border rounded"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={newService.isActive}
+                                            onChange={(e) => setNewService({ ...newService, isActive: e.target.checked })}
+                                            className="mr-2"
+                                        />
+                                        <label>Active Service</label>
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <button
+                                            type="submit"
+                                            className="bg-blue-700 text-white px-6 py-2 rounded hover:bg-blue-800 font-semibold"
+                                            disabled={loading}
+                                        >
+                                            {loading ? 'Adding Service...' : 'Add Government Service'}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}

@@ -3,6 +3,7 @@ import Login from './Auth/Login'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Register from './Auth/Register'
 import AdminDashboard from './Pages/AdminDashboard'
+import StaffDashboard from './Pages/StaffDashboard'
 
 
 const router = createBrowserRouter([
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
    path:"/admin",
    element:<AdminDashboard/>
+  },
+  {
+    path:"/staff",
+    element:<StaffDashboard/>
   }
 ])
 
