@@ -14,9 +14,9 @@ export default function Login() {
         e.preventDefault();
         try {
             const userCredential=await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
+            const userDoc = userCredential.user;
         
-            const userRef = doc(db, "users", user.uid);
+            const userRef = doc(db, "users", userDoc.uid);
             // console.log(userRef);
             // console.log(staffRef);
 
@@ -32,6 +32,7 @@ export default function Login() {
                 console.log("admin");
             }else if(user.role==="user"){
                 console.log("user");
+                navigate(`/user/${userDoc.uid}`);
             }else if(user.role==="staff"){
                 console.log("staff");
                 navigate("/staff");

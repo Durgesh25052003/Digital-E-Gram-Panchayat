@@ -141,6 +141,40 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchApplications = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "applications"));
+            const applicationsData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setApplications(applicationsData);
+        } catch (error) {
+            setError("Failed to fetch applications");
+            console.error(error);
+        }
+    };
+    const fetchServices = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "services"));
+            const servicesData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setServices(servicesData);
+        } catch (error) {
+            setError("Failed to fetch services");
+            console.error(error);
+        }
+    };
+
+    // Add fetchApplications to useEffect
+    useEffect(() => {
+        fetchStaff();
+        fetchServices();
+        fetchApplications();
+    }, []);
+
     const handleDeleteService = async (serviceId) => {
         if (window.confirm("Are you sure you want to delete this service?")) {
             try {
@@ -428,6 +462,43 @@ export default function AdminDashboard() {
                                         </button>
                                     </div>
                                 </form>
+                                <div className="mt-8">
+                                    <h2 className="text-xl font-semibold mb-4">Existing Services</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {services.map(service => (
+                                            <div key={service.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-semibold text-lg">{service.title}</h3>
+                                                    <span className={`px-2 py-1 rounded-full text-xs ${service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                        {service.isActive ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-600 text-sm mt-2">{service.description}</p>
+                                                <div className="mt-3 text-sm">
+                                                    <p><span className="font-semibold">Department:</span> {service.department}</p>
+                                                    <p><span className="font-semibold">Fees:</span> ₹{service.fees}</p>
+                                                    <p><span className="font-semibold">Processing Time:</span> {service.processingTime} days</p>
+                                                </div>
+                                                <div className="mt-4 flex gap-2">
+                                                    <button
+                                                        onClick={() => setEditingService(service)}
+                                                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteService(service.id)}
+                                                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     )}
@@ -471,3 +542,6 @@ export default function AdminDashboard() {
         </div>
     );
 }
+
+
+

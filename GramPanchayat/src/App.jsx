@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Register from './Auth/Register'
 import AdminDashboard from './Pages/AdminDashboard'
 import StaffDashboard from './Pages/StaffDashboard'
+import UserDashboard from './Pages/UserDashboard'
 
 
 const router = createBrowserRouter([
@@ -23,7 +24,11 @@ const router = createBrowserRouter([
   {
     path:"/staff",
     element:<StaffDashboard/>
-  }
+  },
+  {
+    path:"/user/:id",
+    element:<UserDashboard/>
+    }
 ])
 
 
