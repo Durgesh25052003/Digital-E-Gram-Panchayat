@@ -72,6 +72,11 @@ export default function Login() {
                             className="w-full p-2 border rounded"
                             required
                         />
+                        <div className="mt-1 text-right">
+                            <Link to="/forget-password" className="text-sm text-blue-500 hover:text-blue-600">
+                                Forgot Password?
+                            </Link>
+                        </div>
                     </div>
                     <button
                         type="submit"
